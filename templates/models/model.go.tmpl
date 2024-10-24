@@ -1,0 +1,13 @@
+package models
+
+import (
+{{- range .Imports }}
+    "{{ . }}"
+{{- end }}
+)
+
+type {{ .Model.Name }} struct {
+{{- range .Model.Fields }}
+    {{ .Name }} {{ .Type }} {{ printf "`json:\"%s\"`" .Name }}
+{{- end }}
+}

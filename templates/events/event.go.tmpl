@@ -1,0 +1,8 @@
+package events
+
+import "{{ .ModulePath }}/internal/models"
+
+type {{ .Event.Name }} struct {
+    Payload     models.{{ .Event.Payload }} {{ printf "`json:\"payload\"`" }}
+    Description string                      {{ printf "`json:\"description\"`" }}
+}

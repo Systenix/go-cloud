@@ -1,0 +1,54 @@
+package handlers
+
+import (
+    {{- range .Imports }}
+    "{{ . }}"
+    {{- end }}
+)
+
+type {{ .Handler.Name }} struct {
+    Service *services.{{ .Service.Name }}
+}
+
+func New{{ .Handler.Name }}(service *services.{{ .Service.Name }}) *{{ .Handler.Name }} {
+    return &{{ .Handler.Name }}{
+        Service: service,
+    }
+}
+
+{{- range .Handler.Routes }}
+
+func (h *{{ $.Handler.Name }}) {{ .Function }}(c *gin.Context) {
+    // Extract request data
+    {{- if .RequestModel }}
+    var req models.{{ .RequestModel }}
+    if err := c.ShouldBindJSON(&req); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+        return
+    }
+    {{- end }}
+
+    // Call service method
+    {{- if .ServiceMethod }}
+    {{- if .ResponseModel }}
+    resp, err := h.Service.{{ .ServiceMethod }}(c.Request.Context(), {{ if .RequestModel }}&req{{ end }})
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+        return
+    }
+    c.JSON(http.StatusOK, resp)
+    {{- else }}
+    err := h.Service.{{ .ServiceMethod }}(c.Request.Context(), {{ if .RequestModel }}&req{{ end }})
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+        return
+    }
+    c.Status(http.StatusOK)
+    {{- end }}
+    {{- else }}
+    // Service method not specified
+    c.JSON(http.StatusNotImplemented, gin.H{"error": "Service method not implemented"})
+    {{- end }}
+}
+
+{{- end }}

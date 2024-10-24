@@ -1,0 +1,19 @@
+package repositories
+
+import (
+    "{{ .ModulePath }}/internal/models"
+    "context"
+)
+
+type {{ .Repository.Name }} interface {
+}
+
+type {{ .Repository.Name }}Impl struct {
+    // Database connection, internal services (HTTP, gRPC, Kafka)
+}
+
+func New{{ .Repository.Name }}() *{{ .Repository.Name }}Impl {
+    return &{{ .Repository.Name }}Impl{
+        // Initialize database connection, internal services (HTTP, gRPC, Kafka)
+    }
+}

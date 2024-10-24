@@ -1,0 +1,52 @@
+package services
+
+{{- if .Imports }}
+import (
+    {{- range .Imports }}
+    "{{ . }}"
+    {{- end }}
+)
+{{- end }}
+
+type {{ .Service.Name }} struct {
+    {{- if .Service.Repositories }}
+    {{- range .Service.Repositories }}
+    {{ lowerFirst .Name }} repositories.{{ .Name }}
+    {{- end }}
+    {{- else }}
+    // No repositories
+    {{- end }}
+}
+
+func New{{ .Service.Name }}(
+    {{- if .Service.Repositories }}
+    {{- range .Service.Repositories }}
+    {{ lowerFirst .Name }} repositories.{{ .Name }},
+    {{- end }}
+    {{- end }}
+) *{{ .Service.Name }} {
+    return &{{ .Service.Name }}{
+        {{- if .Service.Repositories }}
+        {{- range .Service.Repositories }}
+        {{ lowerFirst .Name }}: {{ lowerFirst .Name }},
+        {{- end }}
+        {{- end }}
+    }
+}
+
+{{- range .Service.Methods }}
+
+func (s *{{ $.Service.Name }}) {{ .Name }}(
+    {{- range $index, $param := .Params }}
+    {{ if $index }}, {{ end }}{{ $param.Name }} {{ $param.Type }}
+    {{- end }}
+) (
+    {{- range $index, $ret := .Returns }}
+    {{ if $index }}, {{ end }}{{ $ret.Name }} {{ $ret.Type }}
+    {{- end }}
+) {
+    // Implement method logic
+    return
+}
+
+{{- end }}
