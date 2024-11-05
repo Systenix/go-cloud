@@ -3,13 +3,20 @@ package configure_command
 import (
 	"fmt"
 
-	"github.com/Systenix/go-cloud/generators"
+	"github.com/Systenix/go-cloud/tui/configure_command/common"
 	"github.com/charmbracelet/bubbles/list"
-	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	if m.CurrentState != nil {
+		cmd := m.CurrentState.Update(msg, m)
+		return m, cmd
+	}
+	return m, nil
+}
+
+/* func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
 	switch m.State {
@@ -591,25 +598,25 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	return m, cmd
-}
+} */
 
 func (m *Model) initializeMainMenu() {
 	items := []list.Item{
-		item{name: "Add Service"},
-		item{name: "Edit Service", disabled: len(m.Data.Services) == 0},
-		item{name: "Remove Service", disabled: len(m.Data.Services) == 0},
-		item{name: "Add Model"},
-		item{name: "Edit Model", disabled: len(m.Data.Models) == 0},
-		item{name: "Remove Model", disabled: len(m.Data.Models) == 0},
-		item{name: "Add Repository", disabled: true},
-		item{name: "Edit Repository", disabled: true},
-		item{name: "Remove Repository", disabled: true},
-		item{name: "Add Handler", disabled: true},
-		item{name: "Edit Handler", disabled: true},
-		item{name: "Remove Handler", disabled: true},
-		item{name: "Save and Exit"},
+		common.Item{Name: "Add Service"},
+		common.Item{Name: "Edit Service", Disabled: len(m.Data.Services) == 0},
+		common.Item{Name: "Remove Service", Disabled: len(m.Data.Services) == 0},
+		common.Item{Name: "Add Model"},
+		common.Item{Name: "Edit Model", Disabled: len(m.Data.Models) == 0},
+		common.Item{Name: "Remove Model", Disabled: len(m.Data.Models) == 0},
+		common.Item{Name: "Add Repository", Disabled: true},
+		common.Item{Name: "Edit Repository", Disabled: true},
+		common.Item{Name: "Remove Repository", Disabled: true},
+		common.Item{Name: "Add Handler", Disabled: true},
+		common.Item{Name: "Edit Handler", Disabled: true},
+		common.Item{Name: "Remove Handler", Disabled: true},
+		common.Item{Name: "Save and Exit"},
 	}
-	m.List = list.New(items, customDelegate{}, 0, 0)
+	m.List = list.New(items, common.CustomDelegate{}, 0, 0)
 	m.List.Title = "Blueprint Configuration"
 	m.List.SetSize(40, 15)
 	m.List.Select(0)
@@ -623,13 +630,13 @@ func (m *Model) initializeMainMenu() {
 func (m *Model) initializeServiceList() {
 	items := []list.Item{}
 	for _, svc := range m.Data.Services {
-		items = append(items, item{name: svc.Name})
+		items = append(items, common.Item{Name: svc.Name})
 	}
-	m.List = list.New(items, customDelegate{}, 0, 0)
+	m.List = list.New(items, common.CustomDelegate{}, 0, 0)
 	m.List.Title = "Select a Service"
 	m.List.SetSize(40, 15)
 	m.List.Select(0)
-	m.removingService = false // Reset removing flag
+	m.RemovingService = false // Reset removing flag
 }
 
 // ################################################################################
@@ -637,13 +644,13 @@ func (m *Model) initializeServiceList() {
 // ################################################################################
 func (m *Model) initializeServiceEditMenu() {
 	items := []list.Item{
-		item{name: "Edit Service Name"},
-		item{name: "Edit Service Type"},
-		item{name: "Assign Models"},
-		item{name: "Done Editing"},
+		common.Item{Name: "Edit Service Name"},
+		common.Item{Name: "Edit Service Type"},
+		common.Item{Name: "Assign Models"},
+		common.Item{Name: "Done Editing"},
 	}
-	m.List = list.New(items, customDelegate{}, 0, 0)
-	m.List.Title = fmt.Sprintf("Editing Service: %s", m.editingService.Name)
+	m.List = list.New(items, common.CustomDelegate{}, 0, 0)
+	m.List.Title = fmt.Sprintf("Editing Service: %s", m.EditingService.Name)
 	m.List.SetSize(40, 15)
 	m.List.Select(0)
 }
@@ -653,10 +660,10 @@ func (m *Model) initializeServiceEditMenu() {
 // ################################################################################
 func (m *Model) initializeServiceTypeList() {
 	items := []list.Item{
-		item{name: "rest"},
+		common.Item{Name: "rest"},
 		// Add other service types as needed
 	}
-	m.List = list.New(items, customDelegate{}, 0, 0)
+	m.List = list.New(items, common.CustomDelegate{}, 0, 0)
 	m.List.Title = "Select Service Type"
 	m.List.SetSize(40, 15)
 	m.List.Select(0)
@@ -668,21 +675,21 @@ func (m *Model) initializeServiceTypeList() {
 func (m *Model) initializeModelSelectionList() {
 	items := []list.Item{}
 	assignedModels := make(map[string]bool)
-	for _, modelName := range m.editingService.ModelNames {
+	for _, modelName := range m.EditingService.ModelNames {
 		assignedModels[modelName] = true
 	}
 
 	for _, model := range m.Data.Models {
-		items = append(items, selectableItem{
-			name:     model.Name,
-			selected: assignedModels[model.Name],
+		items = append(items, common.SelectableItem{
+			Name:     model.Name,
+			Selected: assignedModels[model.Name],
 		})
 	}
 	if len(items) == 0 {
 		m.Err = fmt.Errorf("No models available. Please add models first.")
 	}
-	m.List = list.New(items, customDelegate{}, 0, 0)
-	m.List.Title = fmt.Sprintf("Assign Models to %s (Space to toggle, Enter to confirm)", m.editingService.Name)
+	m.List = list.New(items, common.CustomDelegate{}, 0, 0)
+	m.List.Title = fmt.Sprintf("Assign Models to %s (Space to toggle, Enter to confirm)", m.EditingService.Name)
 	m.List.SetSize(40, 15)
 	m.List.Select(0)
 }
@@ -693,13 +700,13 @@ func (m *Model) initializeModelSelectionList() {
 func (m *Model) initializeModelList() {
 	items := []list.Item{}
 	for _, model := range m.Data.Models {
-		items = append(items, item{name: model.Name})
+		items = append(items, common.Item{Name: model.Name})
 	}
-	m.List = list.New(items, customDelegate{}, 0, 0)
+	m.List = list.New(items, common.CustomDelegate{}, 0, 0)
 	m.List.Title = "Select a Model"
 	m.List.SetSize(40, 15)
 	m.List.Select(0)
-	m.removingModel = false // Reset removing flag
+	m.RemovingModel = false // Reset removing flag
 }
 
 // ################################################################################
@@ -707,13 +714,13 @@ func (m *Model) initializeModelList() {
 // ################################################################################
 func (m *Model) initializeFieldMenu() {
 	items := []list.Item{
-		item{name: "Add Field"},
-		item{name: "Edit Field"},
-		item{name: "Remove Field"},
-		item{name: "Done Editing"},
+		common.Item{Name: "Add Field"},
+		common.Item{Name: "Edit Field"},
+		common.Item{Name: "Remove Field"},
+		common.Item{Name: "Done Editing"},
 	}
-	m.List = list.New(items, customDelegate{}, 0, 0)
-	m.List.Title = fmt.Sprintf("Editing Model: %s", m.editingModel.Name)
+	m.List = list.New(items, common.CustomDelegate{}, 0, 0)
+	m.List.Title = fmt.Sprintf("Editing Model: %s", m.EditingModel.Name)
 	m.List.SetSize(40, 15)
 	m.List.Select(0)
 }
@@ -723,10 +730,10 @@ func (m *Model) initializeFieldMenu() {
 // ################################################################################
 func (m *Model) initializeFieldList() {
 	items := []list.Item{}
-	for _, field := range m.editingModel.Fields {
-		items = append(items, item{name: field.Name})
+	for _, field := range m.EditingModel.Fields {
+		items = append(items, common.Item{Name: field.Name})
 	}
-	m.List = list.New(items, customDelegate{}, 0, 0)
+	m.List = list.New(items, common.CustomDelegate{}, 0, 0)
 	m.List.Title = "Select a Field"
 	m.List.SetSize(40, 15)
 	m.List.Select(0)
@@ -737,30 +744,30 @@ func (m *Model) initializeFieldList() {
 // ################################################################################
 func (m *Model) initializeFieldEditMenu() {
 	items := []list.Item{
-		item{name: "Edit Field Name"},
-		item{name: "Edit Field Type"},
-		item{name: "Edit JSON Name"},
-		item{name: "Done Editing Field"},
+		common.Item{Name: "Edit Field Name"},
+		common.Item{Name: "Edit Field Type"},
+		common.Item{Name: "Edit JSON Name"},
+		common.Item{Name: "Done Editing Field"},
 	}
-	m.List = list.New(items, customDelegate{}, 0, 0)
-	m.List.Title = fmt.Sprintf("Editing Field: %s", m.editingField.Name)
+	m.List = list.New(items, common.CustomDelegate{}, 0, 0)
+	m.List.Title = fmt.Sprintf("Editing Field: %s", m.EditingField.Name)
 	m.List.SetSize(40, 15)
 	m.List.Select(0)
 }
 
 func (m *Model) initializeFieldTypeList() {
 	items := []list.Item{
-		item{name: "string"},
-		item{name: "int"},
-		item{name: "float64"},
-		item{name: "bool"},
+		common.Item{Name: "string"},
+		common.Item{Name: "int"},
+		common.Item{Name: "float64"},
+		common.Item{Name: "bool"},
 		// ... add other basic types ...
 	}
 	// Add existing model names to allow nested fields
 	for _, model := range m.Data.Models {
-		items = append(items, item{name: model.Name})
+		items = append(items, common.Item{Name: model.Name})
 	}
-	m.List = list.New(items, customDelegate{}, 0, 0)
+	m.List = list.New(items, common.CustomDelegate{}, 0, 0)
 	m.List.Title = "Select Field Type"
 	m.List.SetSize(40, 15)
 	m.List.Select(0)
@@ -769,38 +776,9 @@ func (m *Model) initializeFieldTypeList() {
 func getSelectedModelNames(items []list.Item) []string {
 	var selectedModels []string
 	for _, listItem := range items {
-		if item, ok := listItem.(selectableItem); ok && item.selected {
-			selectedModels = append(selectedModels, item.name)
+		if item, ok := listItem.(common.SelectableItem); ok && item.Selected {
+			selectedModels = append(selectedModels, item.Name)
 		}
 	}
 	return selectedModels
 }
-
-type item struct {
-	name     string
-	disabled bool
-}
-
-func (i item) Title() string {
-	if i.disabled {
-		return disabledItemStyle.Render(i.name)
-	}
-	return i.name
-}
-func (i item) Description() string { return "" }
-func (i item) FilterValue() string { return i.name }
-
-type selectableItem struct {
-	name     string
-	selected bool
-}
-
-func (i selectableItem) Title() string {
-	if i.selected {
-		return "[x] " + i.name
-	}
-	return "[ ] " + i.name
-}
-
-func (i selectableItem) Description() string { return "" }
-func (i selectableItem) FilterValue() string { return i.name }

@@ -7,10 +7,8 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-type State int
-
 const (
-	StateProjectInfo State = iota
+	StateProjectInfo = iota
 
 	// Main Menu
 	StateMainMenu
@@ -53,10 +51,17 @@ const (
 	StateDone
 )
 
+// State interface defines the Init, Update and View methods that each state must implement.
+type State interface {
+	Init(m *Model) tea.Cmd
+	Update(msg tea.Msg, m *Model) tea.Cmd
+	View(m *Model) string
+}
+
 // Model represents the state and data of the TUI config command.
 type Model struct {
 	// State represents the current state of the TUI application.
-	State State
+	CurrentState State
 
 	// Data holds the project configuration data.
 	Data generators.ProjectData
@@ -73,59 +78,64 @@ type Model struct {
 	// Err holds any error that occurs during the TUI execution.
 	Err error
 
-	// editingService is a pointer to the service currently being edited.
-	editingService *generators.Service
+	// EditingService is a pointer to the service currently being edited.
+	EditingService *generators.Service
 
-	// editingServiceIndex is the index of the service currently being edited.
-	editingServiceIndex int
+	// EditingServiceIndex is the index of the service currently being edited.
+	EditingServiceIndex int
 
-	// removingService is a flag indicating whether a service is being removed.
-	removingService bool
+	// RemovingService is a flag indicating whether a service is being removed.
+	RemovingService bool
 
-	// editingModel is a pointer to the model currently being edited.
-	editingModel *generators.Model
+	// EditingModel is a pointer to the model currently being edited.
+	EditingModel *generators.Model
 
-	// editingField is a pointer to the field currently being edited.
-	editingField *generators.Field
+	// EditingField is a pointer to the field currently being edited.
+	EditingField *generators.Field
 
-	// editingFieldIndex is the index of the field currently being edited.
-	editingFieldIndex int
+	// EditingFieldIndex is the index of the field currently being edited.
+	EditingFieldIndex int
 
-	// removingField is a flag indicating whether a field is being removed.
-	removingField bool
+	// RemovingField is a flag indicating whether a field is being removed.
+	RemovingField bool
 
-	// editingModelIndex is the index of the model currently being edited.
-	editingModelIndex int
+	// EditingModelIndex is the index of the model currently being edited.
+	EditingModelIndex int
 
-	// removingModel is a flag indicating whether a model is being removed.
-	removingModel bool
+	// RemovingModel is a flag indicating whether a model is being removed.
+	RemovingModel bool
 
-	// editingRepository is a pointer to the repository currently being edited.
-	editingRepository *generators.Repository
+	// EditingRepository is a pointer to the repository currently being edited.
+	EditingRepository *generators.Repository
 
-	// editingHandler is a pointer to the handler currently being edited.
-	editingHandler *generators.Handler
+	// EditingHandler is a pointer to the handler currently being edited.
+	EditingHandler *generators.Handler
 
-	// editingMethod is a pointer to the service method currently being edited.
-	editingMethod *generators.ServiceMethod
+	// EditingMethod is a pointer to the service method currently being edited.
+	EditingMethod *generators.ServiceMethod
 
 	// Add other fields as needed
 }
 
-func InitialConfigModel(data *generators.ProjectData) Model {
-	ti := textinput.New()
-	ti.Placeholder = "Project Name"
-	ti.Focus()
-	ti.CharLimit = 64
-	ti.Width = 30
-
-	return Model{
-		State:     StateProjectInfo,
-		TextInput: ti,
-		Data:      *data,
+// SetState transitions the model to a new state.
+func (m *Model) SetState(state State) {
+	m.CurrentState = state
+	cmd := state.Init(m)
+	if cmd != nil {
+		tea.Batch(cmd)
 	}
 }
 
 func (m *Model) Init() tea.Cmd {
-	return textinput.Blink
+	if m.CurrentState != nil {
+		return m.CurrentState.Init(m)
+	}
+	return nil
+}
+
+// NewModel creates a new model with the provided project data.
+func NewModel(data *generators.ProjectData) *Model {
+	return &Model{
+		Data: *data,
+	}
 }
