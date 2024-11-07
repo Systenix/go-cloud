@@ -3,8 +3,8 @@ package service_states
 import (
 	"fmt"
 
-	"github.com/Systenix/go-cloud/tui/configure_command"
 	"github.com/Systenix/go-cloud/tui/configure_command/common"
+	"github.com/Systenix/go-cloud/tui/configure_command/model"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -15,7 +15,7 @@ func NewServiceSelectTypeState() *ServiceSelectTypeState {
 	return &ServiceSelectTypeState{}
 }
 
-func (s *ServiceSelectTypeState) Init(m *configure_command.Model) tea.Cmd {
+func (s *ServiceSelectTypeState) Init(m *model.Model) tea.Cmd {
 	items := []list.Item{
 		common.Item{Name: "rest"},
 		// Add other service types as needed
@@ -28,7 +28,7 @@ func (s *ServiceSelectTypeState) Init(m *configure_command.Model) tea.Cmd {
 	return nil
 }
 
-func (s *ServiceSelectTypeState) Update(msg tea.Msg, m *configure_command.Model) tea.Cmd {
+func (s *ServiceSelectTypeState) Update(msg tea.Msg, m *model.Model) tea.Cmd {
 	var cmd tea.Cmd
 	m.List, cmd = m.List.Update(msg)
 
@@ -52,6 +52,6 @@ func (s *ServiceSelectTypeState) Update(msg tea.Msg, m *configure_command.Model)
 	return cmd
 }
 
-func (s *ServiceSelectTypeState) View(m *configure_command.Model) string {
+func (s *ServiceSelectTypeState) View(m *model.Model) string {
 	return m.List.View()
 }

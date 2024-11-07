@@ -4,9 +4,8 @@ import (
 	"fmt"
 
 	"github.com/Systenix/go-cloud/generators"
-	"github.com/Systenix/go-cloud/tui/configure_command"
 	"github.com/Systenix/go-cloud/tui/configure_command/common"
-	"github.com/Systenix/go-cloud/tui/configure_command/states"
+	"github.com/Systenix/go-cloud/tui/configure_command/model"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -17,7 +16,7 @@ func NewModelEditState() *ModelEditState {
 	return &ModelEditState{}
 }
 
-func (s *ModelEditState) Init(m *configure_command.Model) tea.Cmd {
+func (s *ModelEditState) Init(m *model.Model) tea.Cmd {
 	items := []list.Item{
 		common.Item{Name: "Add Field"},
 		common.Item{Name: "Edit Field"},
@@ -32,7 +31,7 @@ func (s *ModelEditState) Init(m *configure_command.Model) tea.Cmd {
 	return nil
 }
 
-func (s *ModelEditState) Update(msg tea.Msg, m *configure_command.Model) tea.Cmd {
+func (s *ModelEditState) Update(msg tea.Msg, m *model.Model) tea.Cmd {
 	var cmd tea.Cmd
 
 	if m.EditingModel.Name == "" {
@@ -44,7 +43,9 @@ func (s *ModelEditState) Update(msg tea.Msg, m *configure_command.Model) tea.Cmd
 				m.EditingModel.Name = m.TextInput.Value()
 				m.SetState(NewModelEditState())
 			} else if msg.Type == tea.KeyEsc {
-				m.SetState(states.NewMainMenuState())
+				return func() tea.Msg {
+					return model.ReturnToMainMenu{}
+				}
 			}
 		}
 	} else {
@@ -87,11 +88,15 @@ func (s *ModelEditState) Update(msg tea.Msg, m *configure_command.Model) tea.Cmd
 						}
 						m.EditingModel = nil
 						m.EditingModelIndex = -1
-						m.SetState(states.NewMainMenuState())
+						return func() tea.Msg {
+							return model.ReturnToMainMenu{}
+						}
 					}
 				}
 			} else if msg.Type == tea.KeyEsc {
-				m.SetState(states.NewMainMenuState())
+				return func() tea.Msg {
+					return model.ReturnToMainMenu{}
+				}
 			}
 		}
 	}
@@ -99,6 +104,6 @@ func (s *ModelEditState) Update(msg tea.Msg, m *configure_command.Model) tea.Cmd
 	return cmd
 }
 
-func (s *ModelEditState) View(m *configure_command.Model) string {
+func (s *ModelEditState) View(m *model.Model) string {
 	return m.List.View()
 }

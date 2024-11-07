@@ -6,7 +6,7 @@ import (
 
 	"github.com/Systenix/go-cloud/config"
 	"github.com/Systenix/go-cloud/generators"
-	tui_configure "github.com/Systenix/go-cloud/tui/configure_command"
+	"github.com/Systenix/go-cloud/tui/configure_command"
 	"github.com/Systenix/go-cloud/tui/configure_command/states"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/spf13/cobra"
@@ -58,7 +58,7 @@ var configCmd = &cobra.Command{
 			data = &generators.ProjectData{}
 		}
 
-		model := tui_configure.NewModel(data)
+		model := configure_command.NewModel(data)
 		model.SetState(states.NewProjectInfoState())
 		p := tea.NewProgram(model)
 		updatedModel, err := p.Run()
@@ -68,7 +68,7 @@ var configCmd = &cobra.Command{
 		}
 
 		// access the updated data from the model
-		updatedData := updatedModel.(*tui_configure.Model).Data
+		updatedData := updatedModel.(*configure_command.ConfigureModel).Data
 
 		// Save the configuration to the output file
 		err = saveConfig(outputPath, updatedData)

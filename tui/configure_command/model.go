@@ -2,140 +2,26 @@ package configure_command
 
 import (
 	"github.com/Systenix/go-cloud/generators"
-	"github.com/charmbracelet/bubbles/list"
-	"github.com/charmbracelet/bubbles/textinput"
+	"github.com/Systenix/go-cloud/tui/configure_command/model"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-const (
-	StateProjectInfo = iota
-
-	// Main Menu
-	StateMainMenu
-
-	// Service
-	StateSelectServiceType
-	StateServiceList
-	// Service Edit
-	StateServiceEdit
-	StateServiceEditMenu
-	StateEditServiceName
-	// Service Model Assignment
-	StateSelectModelsForService
-
-	// Method
-	StateMethodList
-	StateMethodEdit
-
-	// Handler
-	StateHandlerList
-	StateHandlerEdit
-
-	// Model
-	StateModelList
-	StateModelEdit
-	// Model's Field
-	StateFieldList
-	StateFieldEditMenu
-	StateFieldName
-	StateEditFieldName
-	StateFieldType
-	StateEditFieldType
-	StateFieldJSONName
-	StateEditFieldJSONName
-
-	// Repository
-	StateRepositoryList
-	StateRepositoryEdit
-
-	StateDone
-)
-
-// State interface defines the Init, Update and View methods that each state must implement.
-type State interface {
-	Init(m *Model) tea.Cmd
-	Update(msg tea.Msg, m *Model) tea.Cmd
-	View(m *Model) string
+type ConfigureModel struct {
+	*model.Model
 }
 
-// Model represents the state and data of the TUI config command.
-type Model struct {
-	// State represents the current state of the TUI application.
-	CurrentState State
-
-	// Data holds the project configuration data.
-	Data generators.ProjectData
-
-	// TextInput is the model for handling text input.
-	TextInput textinput.Model
-
-	// List is the model for handling list views.
-	List list.Model
-
-	// Cursor is used to track the current position in a list or menu.
-	Cursor int
-
-	// Err holds any error that occurs during the TUI execution.
-	Err error
-
-	// EditingService is a pointer to the service currently being edited.
-	EditingService *generators.Service
-
-	// EditingServiceIndex is the index of the service currently being edited.
-	EditingServiceIndex int
-
-	// RemovingService is a flag indicating whether a service is being removed.
-	RemovingService bool
-
-	// EditingModel is a pointer to the model currently being edited.
-	EditingModel *generators.Model
-
-	// EditingField is a pointer to the field currently being edited.
-	EditingField *generators.Field
-
-	// EditingFieldIndex is the index of the field currently being edited.
-	EditingFieldIndex int
-
-	// RemovingField is a flag indicating whether a field is being removed.
-	RemovingField bool
-
-	// EditingModelIndex is the index of the model currently being edited.
-	EditingModelIndex int
-
-	// RemovingModel is a flag indicating whether a model is being removed.
-	RemovingModel bool
-
-	// EditingRepository is a pointer to the repository currently being edited.
-	EditingRepository *generators.Repository
-
-	// EditingHandler is a pointer to the handler currently being edited.
-	EditingHandler *generators.Handler
-
-	// EditingMethod is a pointer to the service method currently being edited.
-	EditingMethod *generators.ServiceMethod
-
-	// Add other fields as needed
-}
-
-// SetState transitions the model to a new state.
-func (m *Model) SetState(state State) {
-	m.CurrentState = state
-	cmd := state.Init(m)
-	if cmd != nil {
-		tea.Batch(cmd)
-	}
-}
-
-func (m *Model) Init() tea.Cmd {
+func (m *ConfigureModel) Init() tea.Cmd {
 	if m.CurrentState != nil {
-		return m.CurrentState.Init(m)
+		return m.CurrentState.Init(m.Model)
 	}
 	return nil
 }
 
 // NewModel creates a new model with the provided project data.
-func NewModel(data *generators.ProjectData) *Model {
-	return &Model{
-		Data: *data,
+func NewModel(data *generators.ProjectData) *ConfigureModel {
+	return &ConfigureModel{
+		Model: &model.Model{
+			Data: *data,
+		},
 	}
 }

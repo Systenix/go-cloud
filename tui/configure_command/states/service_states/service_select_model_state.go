@@ -3,8 +3,8 @@ package service_states
 import (
 	"fmt"
 
-	"github.com/Systenix/go-cloud/tui/configure_command"
 	"github.com/Systenix/go-cloud/tui/configure_command/common"
+	"github.com/Systenix/go-cloud/tui/configure_command/model"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -15,7 +15,7 @@ func NewServiceSelectModelState() *ServiceSelectModelState {
 	return &ServiceSelectModelState{}
 }
 
-func (s *ServiceSelectModelState) Init(m *configure_command.Model) tea.Cmd {
+func (s *ServiceSelectModelState) Init(m *model.Model) tea.Cmd {
 	items := []list.Item{}
 	assignedModels := make(map[string]bool)
 	for _, modelName := range m.EditingService.ModelNames {
@@ -39,7 +39,7 @@ func (s *ServiceSelectModelState) Init(m *configure_command.Model) tea.Cmd {
 	return nil
 }
 
-func (s *ServiceSelectModelState) Update(msg tea.Msg, m *configure_command.Model) tea.Cmd {
+func (s *ServiceSelectModelState) Update(msg tea.Msg, m *model.Model) tea.Cmd {
 	var cmd tea.Cmd
 	m.List, cmd = m.List.Update(msg)
 
@@ -63,7 +63,7 @@ func (s *ServiceSelectModelState) Update(msg tea.Msg, m *configure_command.Model
 	return cmd
 }
 
-func (s *ServiceSelectModelState) View(m *configure_command.Model) string {
+func (s *ServiceSelectModelState) View(m *model.Model) string {
 	helpText := "\n\nPress Space to toggle selection, Enter to confirm, Esc to go back."
 	return m.List.View() + helpText
 }

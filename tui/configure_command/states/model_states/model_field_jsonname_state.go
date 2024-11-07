@@ -1,8 +1,8 @@
 package model_states
 
 import (
-	"github.com/Systenix/go-cloud/tui/configure_command"
 	"github.com/Systenix/go-cloud/tui/configure_command/common"
+	"github.com/Systenix/go-cloud/tui/configure_command/model"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -13,7 +13,7 @@ func NewModelFieldJSONNameState() *ModelFieldJSONNameState {
 	return &ModelFieldJSONNameState{}
 }
 
-func (s *ModelFieldJSONNameState) Init(m *configure_command.Model) tea.Cmd {
+func (s *ModelFieldJSONNameState) Init(m *model.Model) tea.Cmd {
 	m.TextInput = textinput.New()
 	m.TextInput.Placeholder = "JSON Name (leave empty to use field name)"
 	m.TextInput.Focus()
@@ -21,7 +21,7 @@ func (s *ModelFieldJSONNameState) Init(m *configure_command.Model) tea.Cmd {
 	return textinput.Blink
 }
 
-func (s *ModelFieldJSONNameState) Update(msg tea.Msg, m *configure_command.Model) tea.Cmd {
+func (s *ModelFieldJSONNameState) Update(msg tea.Msg, m *model.Model) tea.Cmd {
 	var cmd tea.Cmd
 	m.TextInput, cmd = m.TextInput.Update(msg)
 
@@ -44,6 +44,6 @@ func (s *ModelFieldJSONNameState) Update(msg tea.Msg, m *configure_command.Model
 	return cmd
 }
 
-func (s *ModelFieldJSONNameState) View(m *configure_command.Model) string {
+func (s *ModelFieldJSONNameState) View(m *model.Model) string {
 	return common.RenderPrompt("Enter the JSON name (leave empty to use field name):", m.TextInput.View())
 }

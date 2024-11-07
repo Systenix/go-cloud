@@ -3,9 +3,8 @@ package model_states
 import (
 	"fmt"
 
-	"github.com/Systenix/go-cloud/tui/configure_command"
 	"github.com/Systenix/go-cloud/tui/configure_command/common"
-	"github.com/Systenix/go-cloud/tui/configure_command/states"
+	"github.com/Systenix/go-cloud/tui/configure_command/model"
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
@@ -17,7 +16,7 @@ func NewModelListState() *ModelListState {
 	return &ModelListState{}
 }
 
-func (s *ModelListState) Init(m *configure_command.Model) tea.Cmd {
+func (s *ModelListState) Init(m *model.Model) tea.Cmd {
 	items := []list.Item{}
 	for _, model := range m.Data.Models {
 		items = append(items, common.Item{Name: model.Name})
@@ -31,7 +30,7 @@ func (s *ModelListState) Init(m *configure_command.Model) tea.Cmd {
 	return nil
 }
 
-func (s *ModelListState) Update(msg tea.Msg, m *configure_command.Model) tea.Cmd {
+func (s *ModelListState) Update(msg tea.Msg, m *model.Model) tea.Cmd {
 	var cmd tea.Cmd
 	m.List, cmd = m.List.Update(msg)
 
@@ -44,13 +43,15 @@ func (s *ModelListState) Update(msg tea.Msg, m *configure_command.Model) tea.Cmd
 					return cmd
 				}
 				// Find the model index
-				for i, model := range m.Data.Models {
-					if model.Name == selectedItem.Name {
+				for i, mdl := range m.Data.Models {
+					if mdl.Name == selectedItem.Name {
 						if m.RemovingModel {
 							// Remove the model
 							m.Data.Models = append(m.Data.Models[:i], m.Data.Models[i+1:]...)
 							m.RemovingModel = false
-							m.SetState(states.NewMainMenuState())
+							return func() tea.Msg {
+								return model.ReturnToMainMenu{}
+							}
 						} else {
 							// Edit the model
 							m.EditingModelIndex = i
@@ -66,13 +67,15 @@ func (s *ModelListState) Update(msg tea.Msg, m *configure_command.Model) tea.Cmd
 				}
 			}
 		} else if msg.Type == tea.KeyEsc {
-			m.SetState(states.NewMainMenuState())
+			return func() tea.Msg {
+				return model.ReturnToMainMenu{}
+			}
 		}
 	}
 
 	return cmd
 }
 
-func (s *ModelListState) View(m *configure_command.Model) string {
+func (s *ModelListState) View(m *model.Model) string {
 	return m.List.View()
 }

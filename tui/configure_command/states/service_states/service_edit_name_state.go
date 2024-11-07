@@ -1,8 +1,8 @@
 package service_states
 
 import (
-	"github.com/Systenix/go-cloud/tui/configure_command"
 	"github.com/Systenix/go-cloud/tui/configure_command/common"
+	"github.com/Systenix/go-cloud/tui/configure_command/model"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -13,7 +13,7 @@ func NewServiceEditNameState() *ServiceEditNameState {
 	return &ServiceEditNameState{}
 }
 
-func (s *ServiceEditNameState) Init(m *configure_command.Model) tea.Cmd {
+func (s *ServiceEditNameState) Init(m *model.Model) tea.Cmd {
 	m.TextInput.Reset()
 	m.TextInput.Placeholder = "Service Name"
 	m.TextInput.SetValue(m.EditingService.Name)
@@ -22,7 +22,7 @@ func (s *ServiceEditNameState) Init(m *configure_command.Model) tea.Cmd {
 	return textinput.Blink
 }
 
-func (s *ServiceEditNameState) Update(msg tea.Msg, m *configure_command.Model) tea.Cmd {
+func (s *ServiceEditNameState) Update(msg tea.Msg, m *model.Model) tea.Cmd {
 	var cmd tea.Cmd
 	m.TextInput, cmd = m.TextInput.Update(msg)
 
@@ -39,6 +39,6 @@ func (s *ServiceEditNameState) Update(msg tea.Msg, m *configure_command.Model) t
 	return cmd
 }
 
-func (s *ServiceEditNameState) View(m *configure_command.Model) string {
+func (s *ServiceEditNameState) View(m *model.Model) string {
 	return common.RenderPrompt("Enter the new service name:", m.TextInput.View())
 }

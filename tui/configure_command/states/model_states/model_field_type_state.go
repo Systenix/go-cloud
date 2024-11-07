@@ -3,8 +3,8 @@ package model_states
 import (
 	"fmt"
 
-	"github.com/Systenix/go-cloud/tui/configure_command"
 	"github.com/Systenix/go-cloud/tui/configure_command/common"
+	"github.com/Systenix/go-cloud/tui/configure_command/model"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -15,7 +15,7 @@ func NewModelFieldTypeState() *ModelFieldTypeState {
 	return &ModelFieldTypeState{}
 }
 
-func (s *ModelFieldTypeState) Init(m *configure_command.Model) tea.Cmd {
+func (s *ModelFieldTypeState) Init(m *model.Model) tea.Cmd {
 	items := []list.Item{
 		common.Item{Name: "string"},
 		common.Item{Name: "int"},
@@ -35,7 +35,7 @@ func (s *ModelFieldTypeState) Init(m *configure_command.Model) tea.Cmd {
 	return nil
 }
 
-func (s *ModelFieldTypeState) Update(msg tea.Msg, m *configure_command.Model) tea.Cmd {
+func (s *ModelFieldTypeState) Update(msg tea.Msg, m *model.Model) tea.Cmd {
 	var cmd tea.Cmd
 	m.List, cmd = m.List.Update(msg)
 
@@ -58,6 +58,6 @@ func (s *ModelFieldTypeState) Update(msg tea.Msg, m *configure_command.Model) te
 	return cmd
 }
 
-func (s *ModelFieldTypeState) View(m *configure_command.Model) string {
+func (s *ModelFieldTypeState) View(m *model.Model) string {
 	return m.List.View()
 }

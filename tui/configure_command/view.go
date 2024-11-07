@@ -9,11 +9,11 @@ import (
 	"github.com/muesli/reflow/wordwrap"
 )
 
-func (m *Model) View() string {
+func (m *ConfigureModel) View() string {
 	var mainContent string
 
 	if m.CurrentState != nil {
-		mainContent = m.CurrentState.View(m)
+		mainContent = m.CurrentState.View(m.Model)
 	}
 
 	statusBar := lipgloss.NewStyle().
@@ -33,7 +33,7 @@ func (m *Model) View() string {
 	return lipgloss.JoinVertical(lipgloss.Top, content, statusBar)
 }
 
-func (m *Model) renderBlueprint() string {
+func (m *ConfigureModel) renderBlueprint() string {
 	var sb strings.Builder
 
 	sb.WriteString(styles.TitleStyle.Render("Blueprint State") + "\n\n")

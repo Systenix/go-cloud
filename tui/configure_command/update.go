@@ -1,18 +1,25 @@
 package configure_command
 
 import (
-	"fmt"
-
-	"github.com/Systenix/go-cloud/tui/configure_command/common"
-	"github.com/charmbracelet/bubbles/list"
+	"github.com/Systenix/go-cloud/tui/configure_command/model"
+	"github.com/Systenix/go-cloud/tui/configure_command/states"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *ConfigureModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	// Handle state transition messages.
+	switch msg.(type) {
+	case model.ReturnToMainMenu:
+		m.SetState(states.NewMainMenuState())
+		return m, nil
+	}
+
+	// Current state handle the message
 	if m.CurrentState != nil {
-		cmd := m.CurrentState.Update(msg, m)
+		cmd := m.CurrentState.Update(msg, m.Model)
 		return m, cmd
 	}
+
 	return m, nil
 }
 
@@ -600,7 +607,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 } */
 
-func (m *Model) initializeMainMenu() {
+/* func (m *Model) initializeMainMenu() {
 	items := []list.Item{
 		common.Item{Name: "Add Service"},
 		common.Item{Name: "Edit Service", Disabled: len(m.Data.Services) == 0},
@@ -781,4 +788,4 @@ func getSelectedModelNames(items []list.Item) []string {
 		}
 	}
 	return selectedModels
-}
+} */

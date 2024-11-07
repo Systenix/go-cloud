@@ -3,9 +3,8 @@ package service_states
 import (
 	"fmt"
 
-	"github.com/Systenix/go-cloud/tui/configure_command"
 	"github.com/Systenix/go-cloud/tui/configure_command/common"
-	"github.com/Systenix/go-cloud/tui/configure_command/states"
+	"github.com/Systenix/go-cloud/tui/configure_command/model"
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
@@ -17,7 +16,7 @@ func NewServiceListState() *ServiceListState {
 	return &ServiceListState{}
 }
 
-func (s *ServiceListState) Init(m *configure_command.Model) tea.Cmd {
+func (s *ServiceListState) Init(m *model.Model) tea.Cmd {
 	items := []list.Item{}
 	for _, svc := range m.Data.Services {
 		items = append(items, common.Item{Name: svc.Name})
@@ -31,7 +30,7 @@ func (s *ServiceListState) Init(m *configure_command.Model) tea.Cmd {
 	return nil
 }
 
-func (s *ServiceListState) Update(msg tea.Msg, m *configure_command.Model) tea.Cmd {
+func (s *ServiceListState) Update(msg tea.Msg, m *model.Model) tea.Cmd {
 	var cmd tea.Cmd
 	m.List, cmd = m.List.Update(msg)
 
@@ -50,7 +49,9 @@ func (s *ServiceListState) Update(msg tea.Msg, m *configure_command.Model) tea.C
 							// Remove the service
 							m.Data.Services = append(m.Data.Services[:i], m.Data.Services[i+1:]...)
 							m.RemovingService = false
-							m.SetState(states.NewMainMenuState())
+							return func() tea.Msg {
+								return model.ReturnToMainMenu{}
+							}
 						} else {
 							// Edit the service
 							m.EditingServiceIndex = i
@@ -66,13 +67,15 @@ func (s *ServiceListState) Update(msg tea.Msg, m *configure_command.Model) tea.C
 				}
 			}
 		} else if msg.Type == tea.KeyEsc {
-			m.SetState(states.NewMainMenuState())
+			return func() tea.Msg {
+				return model.ReturnToMainMenu{}
+			}
 		}
 	}
 
 	return cmd
 }
 
-func (s *ServiceListState) View(m *configure_command.Model) string {
+func (s *ServiceListState) View(m *model.Model) string {
 	return m.List.View()
 }

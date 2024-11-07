@@ -3,9 +3,8 @@ package service_states
 import (
 	"fmt"
 
-	"github.com/Systenix/go-cloud/tui/configure_command"
 	"github.com/Systenix/go-cloud/tui/configure_command/common"
-	"github.com/Systenix/go-cloud/tui/configure_command/states"
+	"github.com/Systenix/go-cloud/tui/configure_command/model"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -16,7 +15,7 @@ func NewServiceEditMenuState() *ServiceEditMenuState {
 	return &ServiceEditMenuState{}
 }
 
-func (s *ServiceEditMenuState) Init(m *configure_command.Model) tea.Cmd {
+func (s *ServiceEditMenuState) Init(m *model.Model) tea.Cmd {
 	items := []list.Item{
 		common.Item{Name: "Edit Service Name"},
 		common.Item{Name: "Edit Service Type"},
@@ -31,7 +30,7 @@ func (s *ServiceEditMenuState) Init(m *configure_command.Model) tea.Cmd {
 	return nil
 }
 
-func (s *ServiceEditMenuState) Update(msg tea.Msg, m *configure_command.Model) tea.Cmd {
+func (s *ServiceEditMenuState) Update(msg tea.Msg, m *model.Model) tea.Cmd {
 	var cmd tea.Cmd
 	m.List, cmd = m.List.Update(msg)
 
@@ -59,18 +58,22 @@ func (s *ServiceEditMenuState) Update(msg tea.Msg, m *configure_command.Model) t
 					}
 					m.EditingService = nil
 					m.EditingServiceIndex = -1
-					m.SetState(states.NewMainMenuState())
+					return func() tea.Msg {
+						return model.ReturnToMainMenu{}
+					}
 				}
 			}
 		} else if msg.Type == tea.KeyEsc {
 			// Go back to main menu
-			m.SetState(states.NewMainMenuState())
+			return func() tea.Msg {
+				return model.ReturnToMainMenu{}
+			}
 		}
 	}
 
 	return cmd
 }
 
-func (s *ServiceEditMenuState) View(m *configure_command.Model) string {
+func (s *ServiceEditMenuState) View(m *model.Model) string {
 	return m.List.View()
 }

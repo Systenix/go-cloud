@@ -1,8 +1,8 @@
 package model_states
 
 import (
-	"github.com/Systenix/go-cloud/tui/configure_command"
 	"github.com/Systenix/go-cloud/tui/configure_command/common"
+	"github.com/Systenix/go-cloud/tui/configure_command/model"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -13,7 +13,7 @@ func NewModelEditFieldJSONNameState() *ModelEditFieldJSONNameState {
 	return &ModelEditFieldJSONNameState{}
 }
 
-func (s *ModelEditFieldJSONNameState) Init(m *configure_command.Model) tea.Cmd {
+func (s *ModelEditFieldJSONNameState) Init(m *model.Model) tea.Cmd {
 	m.TextInput = textinput.New()
 	m.TextInput.Placeholder = "JSON Name"
 	m.TextInput.SetValue(m.EditingField.JSONName)
@@ -22,7 +22,7 @@ func (s *ModelEditFieldJSONNameState) Init(m *configure_command.Model) tea.Cmd {
 	return textinput.Blink
 }
 
-func (s *ModelEditFieldJSONNameState) Update(msg tea.Msg, m *configure_command.Model) tea.Cmd {
+func (s *ModelEditFieldJSONNameState) Update(msg tea.Msg, m *model.Model) tea.Cmd {
 	var cmd tea.Cmd
 	m.TextInput, cmd = m.TextInput.Update(msg)
 
@@ -46,6 +46,6 @@ func (s *ModelEditFieldJSONNameState) Update(msg tea.Msg, m *configure_command.M
 	return cmd
 }
 
-func (s *ModelEditFieldJSONNameState) View(m *configure_command.Model) string {
+func (s *ModelEditFieldJSONNameState) View(m *model.Model) string {
 	return common.RenderPrompt("Enter the new JSON name (leave empty to keep the current json's tag):", m.TextInput.View())
 }

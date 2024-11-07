@@ -1,8 +1,8 @@
 package states
 
 import (
-	"github.com/Systenix/go-cloud/tui/configure_command"
 	"github.com/Systenix/go-cloud/tui/configure_command/common"
+	"github.com/Systenix/go-cloud/tui/configure_command/model"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -13,7 +13,7 @@ func NewProjectInfoState() *ProjectInfoState {
 	return &ProjectInfoState{}
 }
 
-func (s *ProjectInfoState) Init(m *configure_command.Model) tea.Cmd {
+func (s *ProjectInfoState) Init(m *model.Model) tea.Cmd {
 	m.TextInput = textinput.New()
 	m.TextInput.Placeholder = "Project Name"
 	m.TextInput.Focus()
@@ -22,7 +22,7 @@ func (s *ProjectInfoState) Init(m *configure_command.Model) tea.Cmd {
 	return textinput.Blink
 }
 
-func (s *ProjectInfoState) Update(msg tea.Msg, m *configure_command.Model) tea.Cmd {
+func (s *ProjectInfoState) Update(msg tea.Msg, m *model.Model) tea.Cmd {
 	var cmd tea.Cmd
 	m.TextInput, cmd = m.TextInput.Update(msg)
 
@@ -35,6 +35,7 @@ func (s *ProjectInfoState) Update(msg tea.Msg, m *configure_command.Model) tea.C
 				m.TextInput.Placeholder = "Module Path (e.g., github.com/Username/project)"
 			} else if m.Data.ModulePath == "" {
 				m.Data.ModulePath = m.TextInput.Value()
+				m.TextInput.Reset()
 				m.SetState(NewMainMenuState())
 			}
 		}
@@ -42,7 +43,7 @@ func (s *ProjectInfoState) Update(msg tea.Msg, m *configure_command.Model) tea.C
 	return cmd
 }
 
-func (s *ProjectInfoState) View(m *configure_command.Model) string {
+func (s *ProjectInfoState) View(m *model.Model) string {
 	if m.Data.ProjectName == "" {
 		return common.RenderPrompt("Enter the project name:", m.TextInput.View())
 	} else if m.Data.ModulePath == "" {

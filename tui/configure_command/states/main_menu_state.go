@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"github.com/Systenix/go-cloud/generators"
-	"github.com/Systenix/go-cloud/tui/configure_command"
 	"github.com/Systenix/go-cloud/tui/configure_command/common"
+	"github.com/Systenix/go-cloud/tui/configure_command/model"
 	"github.com/Systenix/go-cloud/tui/configure_command/states/model_states"
 	"github.com/Systenix/go-cloud/tui/configure_command/states/service_states"
 	"github.com/Systenix/go-cloud/tui/configure_command/styles"
@@ -20,7 +20,7 @@ func NewMainMenuState() *MainMenuState {
 	return &MainMenuState{}
 }
 
-func (s *MainMenuState) Init(m *configure_command.Model) tea.Cmd {
+func (s *MainMenuState) Init(m *model.Model) tea.Cmd {
 	items := []list.Item{
 		common.Item{Name: "Add Service"},
 		common.Item{Name: "Edit Service", Disabled: len(m.Data.Services) == 0},
@@ -38,7 +38,7 @@ func (s *MainMenuState) Init(m *configure_command.Model) tea.Cmd {
 	return nil
 }
 
-func (s *MainMenuState) Update(msg tea.Msg, m *configure_command.Model) tea.Cmd {
+func (s *MainMenuState) Update(msg tea.Msg, m *model.Model) tea.Cmd {
 	var cmd tea.Cmd
 	m.List, cmd = m.List.Update(msg)
 
@@ -54,9 +54,6 @@ func (s *MainMenuState) Update(msg tea.Msg, m *configure_command.Model) tea.Cmd 
 				case "Add Service":
 					m.EditingService = &generators.Service{}
 					m.EditingServiceIndex = -1
-					m.TextInput = textinput.New()
-					m.TextInput.Placeholder = "Service Name"
-					m.TextInput.Focus()
 					m.SetState(service_states.NewServiceEditState())
 				case "Edit Service":
 					if len(m.Data.Services) == 0 {
@@ -102,7 +99,7 @@ func (s *MainMenuState) Update(msg tea.Msg, m *configure_command.Model) tea.Cmd 
 	return cmd
 }
 
-func (s *MainMenuState) View(m *configure_command.Model) string {
+func (s *MainMenuState) View(m *model.Model) string {
 	if m.Err != nil {
 		errorMsg := styles.ErrorStyle.Render(m.Err.Error())
 		mainContent := fmt.Sprintf("%s\n\n%s", m.List.View(), errorMsg)

@@ -1,9 +1,8 @@
 package service_states
 
 import (
-	"github.com/Systenix/go-cloud/tui/configure_command"
 	"github.com/Systenix/go-cloud/tui/configure_command/common"
-	"github.com/Systenix/go-cloud/tui/configure_command/states"
+	"github.com/Systenix/go-cloud/tui/configure_command/model"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -14,7 +13,7 @@ func NewServiceEditState() *ServiceEditState {
 	return &ServiceEditState{}
 }
 
-func (s *ServiceEditState) Init(m *configure_command.Model) tea.Cmd {
+func (s *ServiceEditState) Init(m *model.Model) tea.Cmd {
 	m.TextInput = textinput.New()
 	m.TextInput.Placeholder = "Service Name"
 	m.TextInput.Focus()
@@ -22,7 +21,7 @@ func (s *ServiceEditState) Init(m *configure_command.Model) tea.Cmd {
 	return textinput.Blink
 }
 
-func (s *ServiceEditState) Update(msg tea.Msg, m *configure_command.Model) tea.Cmd {
+func (s *ServiceEditState) Update(msg tea.Msg, m *model.Model) tea.Cmd {
 	var cmd tea.Cmd
 	m.TextInput, cmd = m.TextInput.Update(msg)
 
@@ -38,7 +37,9 @@ func (s *ServiceEditState) Update(msg tea.Msg, m *configure_command.Model) tea.C
 				m.SetState(NewServiceSelectTypeState())
 			} else if msg.Type == tea.KeyEsc {
 				// Go back to main menu
-				m.SetState(states.NewMainMenuState())
+				return func() tea.Msg {
+					return model.ReturnToMainMenu{}
+				}
 			}
 		}
 	} else {
@@ -49,7 +50,7 @@ func (s *ServiceEditState) Update(msg tea.Msg, m *configure_command.Model) tea.C
 	return cmd
 }
 
-func (s *ServiceEditState) View(m *configure_command.Model) string {
+func (s *ServiceEditState) View(m *model.Model) string {
 	if m.EditingService.Name == "" {
 		return common.RenderPrompt("Enter the service name:", m.TextInput.View())
 	} else if m.EditingService.Type == "" {

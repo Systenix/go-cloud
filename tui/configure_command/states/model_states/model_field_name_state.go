@@ -1,8 +1,8 @@
 package model_states
 
 import (
-	"github.com/Systenix/go-cloud/tui/configure_command"
 	"github.com/Systenix/go-cloud/tui/configure_command/common"
+	"github.com/Systenix/go-cloud/tui/configure_command/model"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -13,7 +13,7 @@ func NewModelFieldNameState() *ModelFieldNameState {
 	return &ModelFieldNameState{}
 }
 
-func (s *ModelFieldNameState) Init(m *configure_command.Model) tea.Cmd {
+func (s *ModelFieldNameState) Init(m *model.Model) tea.Cmd {
 	m.TextInput = textinput.New()
 	m.TextInput.Placeholder = "Field Name"
 	m.TextInput.SetValue(m.EditingField.Name)
@@ -22,7 +22,7 @@ func (s *ModelFieldNameState) Init(m *configure_command.Model) tea.Cmd {
 	return textinput.Blink
 }
 
-func (s *ModelFieldNameState) Update(msg tea.Msg, m *configure_command.Model) tea.Cmd {
+func (s *ModelFieldNameState) Update(msg tea.Msg, m *model.Model) tea.Cmd {
 	var cmd tea.Cmd
 	m.TextInput, cmd = m.TextInput.Update(msg)
 
@@ -40,6 +40,6 @@ func (s *ModelFieldNameState) Update(msg tea.Msg, m *configure_command.Model) te
 	return cmd
 }
 
-func (s *ModelFieldNameState) View(m *configure_command.Model) string {
+func (s *ModelFieldNameState) View(m *model.Model) string {
 	return common.RenderPrompt("Enter the field name:", m.TextInput.View())
 }
