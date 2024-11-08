@@ -3,6 +3,7 @@ package cli
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/Systenix/go-cloud/config"
 	"github.com/Systenix/go-cloud/generators"
@@ -53,6 +54,9 @@ var generateCmd = &cobra.Command{
 				os.Exit(1)
 			}
 			// Map configData to ProjectData
+			data.GoVersion = configData.GoVersion
+			data.Middleware = configData.Middleware
+			data.Docker = configData.Docker
 			data.Services = configData.Services
 			data.Models = configData.Models
 			data.Events = configData.Events
@@ -69,7 +73,7 @@ var generateCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		fmt.Printf("Project %s has been successfully created at %s.\n", data.ProjectName, data.ProjectPath)
+		fmt.Printf("Project %s has been successfully created at %s.\n", data.ProjectName, filepath.Join(data.ProjectPath, data.ProjectName))
 	},
 }
 

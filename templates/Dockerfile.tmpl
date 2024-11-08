@@ -1,11 +1,20 @@
-# {{if .IncludeDocker}}
-FROM golang:1.18-alpine
+# Use official Golang image as builder
+FROM golang:{{ .GoVersion }} AS builder
 
 WORKDIR /app
 
+COPY go.mod go.sum ./
+RUN go mod download
+
 COPY . .
 
-RUN go build -o main ./cmd/cli/{{.ProjectName}}/
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o {{ .ProjectName }} cmd/main.go
 
-CMD ["/app/main"]
-# {{end}}
+# Use a minimal base image
+FROM alpine:latest
+
+WORKDIR /app
+
+COPY --from=builder /app/{{ .ProjectName }} .
+
+CMD ["./{{ .ProjectName }}"]

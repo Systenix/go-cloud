@@ -1,0 +1,88 @@
+project_name: "my_project"
+project_path: "github.com/myusername"
+module_path: "github.com/myusername/my_project"
+
+middleware: # Middleware to be applied globally to this service
+  - name: "LoggingMiddleware"
+    type: "logging"
+    scope: "global"
+  - name: "RecoveryMiddleware"
+    type: "recovery"
+    scope: "global"
+  - name: "MetricsMiddleware"
+    type: "metrics"
+    scope: "route"
+    options:
+      endpoint: "/metrics"
+
+third_party:
+  prometheus:
+    enabled: true
+    port: "9090"
+  grafana:
+    enabled: true
+    port: "3000"
+
+services:
+  - name: "MyService"
+    type: "rest"
+    port: "8080"
+    models:
+      # References to models defined in the models section at root level
+      - name: "MyModel1"
+      - name: "MyModel2"
+    repositories:
+      - name: "MyRepository"
+        model: "MyModel2"
+    handlers:
+      - name: "MyHandler"
+        service: "MyService"
+        routes:
+          - path: "/endpoint"
+            method: "GET"
+            function: "HandleEndpoint"
+            service_method: "HandleEndpoint"
+            middleware: # Middleware to be applied to this route (only for scope route)
+              - "MetricsMiddleware"
+    methods:
+      - name: "HandleEndpoint"
+        params:
+          - name: "ctx"
+            type: "context.Context"
+          - name: "req"
+            type: "*models.MyRequest"
+        returns:
+          - name: "resp"
+            type: "*models.MyResponse"
+          - name: "err"
+            type: "error"
+
+models:
+  - name: "MyModel1"
+    fields:
+      - name: "Field1"
+        type: "string"
+        json_name: "field1"
+      - name: "Field2"
+        type: "[]int"
+        json_name: "field2"
+
+  - name: "MyModel2"
+    fields:
+      - name: "Field1"
+        type: "*models.MyModel1"
+        json_name: "field1"
+
+  - name: "MyRequest"
+    fields:
+      - name: "Param1"
+        type: "string"
+        json_name: "param1"
+  - name: "MyResponse"
+    fields:
+      - name: "Result"
+        type: "MyModel2"
+        json_name: "result"
+
+docker:
+  enabled: true

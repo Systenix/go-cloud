@@ -1,104 +1,47 @@
 package main
 
 import (
-    {{- if .NeedsGin }}
-    "github.com/gin-gonic/gin"
-    {{- end }}
-    {{- if .NeedsDig }}
-    "go.uber.org/dig"
-    {{- end }}
     {{- range .Imports }}
     "{{ . }}"
     {{- end }}
-    "log"
 )
 
 func main() {
-    {{- if .NeedsDig }}
-    container := dig.New()
-    
-    // Provide constructors for repositories
-    {{- range .Repositories }}
-    container.Provide(repositories.New{{ .Name }})
+    // Create a router without any middleware by default
+    router := gin.New()
+
+    {{- range .Middleware }}
+    // Apply global middleware
+    {{- if eq .Scope "global" }}
+    router.Use(middleware.{{ .Name }}())
+    {{- end }}
     {{- end }}
 
-    // Provide constructors for services
+    // Initialize services and handlers
     {{- range .Services }}
-    container.Provide(services.New{{ .Name }})
+    {{ lowerFirst .Name }} := services.New{{ .Name }}()
     {{- end }}
-
-    // Provide constructors for handlers
     {{- range .Handlers }}
-    container.Provide(handlers.New{{ .Name }})
+    {{ lowerFirst .Name }} := handlers.New{{ .Name }}({{ lowerFirst .Service }})
     {{- end }}
 
-    // Invoke the main function
-    err := container.Invoke(func(
-        {{- range .Handlers }}
-        {{ lowerFirst .Name }} *handlers.{{ .Name }},
-        {{- end }}
-    ) {
-        {{- if .NeedsGin }}
-        router := gin.Default()
-        {{- range .Handlers }}
-        {{- $handler := . }}
-        // Register routes for {{ $handler.Name }}
-        {{- range $handler.Routes }}
-        router.{{ .Method }}("{{ .Path }}", {{ lowerFirst $handler.Name }}.{{ .Function }})
-        {{- end }}
-        {{- end }}
-        log.Println("Starting server on :8080")
-        if err := router.Run(":8080"); err != nil {
-            log.Fatal(err)
-        }
-        {{- else }}
-        // Application logic without Gin
-        {{- end }}
-    })
-    if err != nil {
-        log.Fatal(err)
-    }
-    {{- else }}
-    // Non-DI initialization
-
-    // Initialize repositories
-    {{- range .Repositories }}
-    {{ lowerFirst .Name }}Repo := repositories.New{{ .Name }}()
-    {{- end }}
-
-    // Initialize services
-    {{- range .Services }}
-    {{ lowerFirst .Name }}Service := services.New{{ .Name }}(
-        {{- range .Repositories }}
-        {{ lowerFirst .Name }}Repo,
-        {{- end }}
-    )
-    {{- end }}
-
-    // Initialize handlers
-    {{- range .Handlers }}
-    {{ lowerFirst .Name }}Handler := handlers.New{{ .Name }}(
-        {{- range .Services }}
-        {{ lowerFirst .Name }}Service,
-        {{- end }}
-    )
-    {{- end }}
-
-    {{- if .NeedsGin }}
-    router := gin.Default()
+    // Register routes
     {{- range .Handlers }}
     {{- $handler := . }}
-    // Register routes for {{ $handler.Name }}
-    {{- range $handler.Routes }}
-    router.{{ .Method }}("{{ .Path }}", {{ lowerFirst $handler.Name }}Handler.{{ .Function }})
+    {{- range $route := .Routes }}
+    // Route: {{ $route.Method }} {{ $route.Path }}
+    router.{{ $route.Method }}("{{ $route.Path }}",
+        {{- range $index, $mw := $route.Middleware }}
+        middleware.{{ $mw }}(),
+        {{- end }}
+        {{ lowerFirst $handler.Name }}.{{ $route.Function }},
+    )
     {{- end }}
     {{- end }}
+
+    // Start the server
     log.Println("Starting server on :8080")
     if err := router.Run(":8080"); err != nil {
         log.Fatal(err)
     }
-    {{- else }}
-    // Application logic without Gin
-    {{- end }}
-    {{- end }}
 }

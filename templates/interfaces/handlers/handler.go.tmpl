@@ -6,6 +6,12 @@ import (
     {{- end }}
 )
 
+type I{{ .Handler.Name }} interface {
+    {{- range .Handler.Routes }}
+    {{ .Function }}(c *gin.Context)
+    {{- end }}
+}
+
 type {{ .Handler.Name }} struct {
     Service *services.{{ .Service.Name }}
 }

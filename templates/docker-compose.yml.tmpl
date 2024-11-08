@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  {{ .ProjectName }}:
+    build: .
+    ports:
+      - "8080:8080"
+    networks:
+      - {{ .ProjectName }}_network
+
+  {{- if .ThirdParty.Prometheus.Enabled }}
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "{{ .ThirdParty.Prometheus.Port }}:{{ .ThirdParty.Prometheus.Port }}"
+    networks:
+      - {{ .ProjectName }}_network
+  {{- end }}
+
+  {{- if .ThirdParty.Grafana.Enabled }}
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "{{ .ThirdParty.Grafana.Port }}:{{ .ThirdParty.Grafana.Port }}"
+    networks:
+      - {{ .ProjectName }}_network
+  {{- end }}
+
+networks:
+  {{ .ProjectName }}_network:
+    driver: bridge

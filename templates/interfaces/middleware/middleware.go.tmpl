@@ -1,0 +1,34 @@
+package middleware
+
+import (
+    "github.com/gin-gonic/gin"
+    {{- range .Imports }}
+    "{{ . }}"
+    {{- end }}
+)
+
+{{- range .Middleware }}
+
+func {{ .Name }}() gin.HandlerFunc {
+    return func(c *gin.Context) {
+        {{- if eq .Type "logging" }}
+        // Logging middleware logic
+        t := time.Now()
+        c.Next()
+        latency := time.Since(t)
+        status := c.Writer.Status()
+        log.Printf("[LOGGING] %s %s %d %v", c.Request.Method, c.Request.URL.Path, status, latency)
+        {{- else if eq .Type "recovery" }}
+        // Recovery middleware logic
+        gin.Recovery()(c)
+        {{- else if eq .Type "metrics" }}
+        // Metrics middleware logic
+        // Placeholder: Implement metrics recording here
+        c.Next()
+        {{- else }}
+        // Custom middleware logic
+        c.Next()
+        {{- end }}
+    }
+}
+{{- end }}
