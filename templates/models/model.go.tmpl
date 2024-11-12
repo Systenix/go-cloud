@@ -8,6 +8,6 @@ import (
 
 type {{ .Model.Name }} struct {
 {{- range .Model.Fields }}
-    {{ .Name }} {{ .Type }} {{ printf "`json:\"%s\"`" .Name }}
+    {{ toCamelCase .Name }} {{ .Type }} {{ printf "`json:\"%s\"`" .Name }}
 {{- end }}
 }

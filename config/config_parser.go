@@ -8,16 +8,18 @@ import (
 )
 
 type ConfigData struct {
-	ProjectName string                  `yaml:"project_name"`
-	ProjectPath string                  `yaml:"project_path"`
-	ModulePath  string                  `yaml:"module_path"`
-	GoVersion   string                  `yaml:"go_version"`
-	Middleware  []generators.Middleware `yaml:"middleware"`
-	Services    []generators.Service    `yaml:"services"`
-	Models      []generators.Model      `yaml:"models"`
-	Events      []generators.Event      `yaml:"events"`
-	Docker      generators.Docker       `yaml:"docker"`
-	ThirdParty  generators.ThirdParty   `yaml:"third_party"`
+	ProjectName  string                  `yaml:"project_name"`
+	ProjectPath  string                  `yaml:"project_path"`
+	ModulePath   string                  `yaml:"module_path"`
+	GoVersion    string                  `yaml:"go_version"`
+	Port         string                  `yaml:"port"`
+	Middleware   []generators.Middleware `yaml:"middleware"`
+	Services     []generators.Service    `yaml:"services"`
+	Models       []generators.Model      `yaml:"models"`
+	Repositories []generators.Repository `yaml:"repositories"`
+	Events       []generators.Event      `yaml:"events"`
+	Docker       generators.Docker       `yaml:"docker"`
+	ThirdParty   generators.ThirdParty   `yaml:"third_party"`
 }
 
 func ParseConfig(filePath string) (*ConfigData, error) {

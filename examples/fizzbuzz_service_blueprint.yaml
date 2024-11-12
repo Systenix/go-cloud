@@ -1,0 +1,140 @@
+go_version: "1.22.2" # Go version to use
+port: 8080 # Port to run the services on
+
+services:
+  - name: "FizzBuzzService"
+    type: "rest"
+    models:
+      # References to models defined in the models section at root level
+      - "FizzBuzzRequest"
+    repositories:
+      - "StatisticsRepository"
+    handlers:
+      - name: "FizzBuzzHandler"
+        service: "FizzBuzzService"
+        routes:
+          - path: "/fizzbuzz"
+            verb: "GET"
+            method: "FizzBuzz"
+            request_model: "FizzBuzzRequest"
+            response_model: "FizzBuzzResponse"
+            middleware: # Middleware to be applied to this handler only
+              - "MetricsMiddleware"
+          - path: "/statistics"
+            verb: "GET"
+            method: "GetStatistics"
+            response_model: "StatsResponse"
+    methods:
+      - name: "FizzBuzz"
+        params:
+          - name: "ctx"
+            type: "context.Context"
+          - name: "request"
+            type: "*models.FizzBuzzRequest"
+        returns:
+          - name: "result"
+            type: "[]string"
+          - name: "err"
+            type: "error"
+      - name: "GetStatistics"
+        params:
+          - name: "ctx"
+            type: "context.Context"
+        returns:
+          - name: "result"
+            type: "*models.StatsResponse"
+          - name: "err"
+            type: "error"
+
+middleware: # Middleware to be applied globally to this service
+  - name: "LoggingMiddleware"
+    type: "logging"
+    scope: "global"
+  - name: "RecoveryMiddleware"
+    type: "recovery"
+    scope: "global"
+  - name: "MetricsMiddleware"
+    type: "metrics"
+    scope: "route"
+    options:
+      endpoint: "/metrics"
+
+repositories:
+  - name: "StatisticsRepository"
+    type: "redis"
+    model: "StatsResponse"
+    settings:
+      address: "localhost:6379"
+      password: ""
+      db: 0
+    methods:
+      - name: "Increment"
+        params:
+          - name: "ctx"
+            type: "context.Context"
+          - name: "request"
+            type: "*models.FizzBuzzRequest"
+        returns:
+          - name: "err"
+            type: "error"
+      - name: "GetMostFrequent"
+        params:
+          - name: "ctx"
+            type: "context.Context"
+        returns:
+          - name: "result"
+            type: "*models.StatsResponse"
+          - name: "err"
+            type: "error"
+
+models:
+  - name: FizzBuzzRequest
+    fields:
+      - name: int1
+        type: int
+        json_name: int1
+      - name: int2
+        type: int
+        json_name: int2
+      - name: limit
+        type: int
+        json_name: limit
+      - name: str1
+        type: string
+        json_name: str1
+      - name: str2
+        type: string
+        json_name: str2
+  - name: FizzBuzzResponse
+    fields:
+      - name: "result"
+        type: "[]string"
+  - name: StatsResponse
+    fields:
+      - name: "most_frequent"
+        type: "*FizzBuzzRequest"
+      - name: "hits"
+        type: "int"
+
+# docker_container:
+#   enabled: true
+#   go_version: "1.22.2"
+
+# docker_compose:
+#   prometheus:
+#     enabled: true
+#     port: "9090"
+#   grafana:
+#     enabled: true
+#     port: "3000"
+
+docker:
+  enabled: true
+
+third_party:
+  prometheus:
+    enabled: true
+    port: "9090"
+  grafana:
+    enabled: true
+    port: "3000"

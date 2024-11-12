@@ -18,7 +18,7 @@ func NewServiceSelectModelState() *ServiceSelectModelState {
 func (s *ServiceSelectModelState) Init(m *model.Model) tea.Cmd {
 	items := []list.Item{}
 	assignedModels := make(map[string]bool)
-	for _, modelName := range m.EditingService.ModelNames {
+	for _, modelName := range m.EditingService.Models {
 		assignedModels[modelName] = true
 	}
 
@@ -53,7 +53,7 @@ func (s *ServiceSelectModelState) Update(msg tea.Msg, m *model.Model) tea.Cmd {
 			}
 		} else if msg.String() == "enter" {
 			// Collect selected models
-			m.EditingService.ModelNames = getSelectedModelNames(m.List.Items())
+			m.EditingService.Models = getSelectedModelNames(m.List.Items())
 			m.SetState(NewServiceEditMenuState())
 		} else if msg.Type == tea.KeyEsc {
 			m.SetState(NewServiceEditMenuState())

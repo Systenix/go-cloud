@@ -23,25 +23,21 @@ type I{{ .Service.Name }} interface {
 }
 
 type {{ .Service.Name }} struct {
-    {{- if .Service.Repositories }}
-    {{- range .Service.Repositories }}
-    {{ lowerFirst .Name }} repositories.{{ .Name }}
-    {{- end }}
-    {{- else }}
-    // No repositories
+    {{- range .Repositories }}
+    {{ lowerFirst .Name }} *repositories.{{ .Name }}
     {{- end }}
 }
 
 func New{{ .Service.Name }}(
-    {{- if .Service.Repositories }}
-    {{- range .Service.Repositories }}
-    {{ lowerFirst .Name }} repositories.{{ .Name }},
+    {{- if .Repositories }}
+    {{- range $index, $repo := .Repositories }}
+    {{ if $index }}, {{ end }}{{ lowerFirst $repo.Name }} *repositories.{{ $repo.Name }}
     {{- end }}
     {{- end }}
 ) *{{ .Service.Name }} {
     return &{{ .Service.Name }}{
-        {{- if .Service.Repositories }}
-        {{- range .Service.Repositories }}
+        {{- if .Repositories }}
+        {{- range .Repositories }}
         {{ lowerFirst .Name }}: {{ lowerFirst .Name }},
         {{- end }}
         {{- end }}
@@ -59,7 +55,7 @@ func (s *{{ $.Service.Name }}) {{ .Name }}(
     {{ if $index }}, {{ end }}{{ $ret.Name }} {{ $ret.Type }}
     {{- end }}
 ) {
-    // Implement method logic
+    // TODO: Implement {{ .Name }} method
     return
 }
 

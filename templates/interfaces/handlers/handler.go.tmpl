@@ -8,7 +8,7 @@ import (
 
 type I{{ .Handler.Name }} interface {
     {{- range .Handler.Routes }}
-    {{ .Function }}(c *gin.Context)
+    {{ .Method }}(c *gin.Context)
     {{- end }}
 }
 
@@ -24,9 +24,9 @@ func New{{ .Handler.Name }}(service *services.{{ .Service.Name }}) *{{ .Handler.
 
 {{- range .Handler.Routes }}
 
-func (h *{{ $.Handler.Name }}) {{ .Function }}(c *gin.Context) {
-    // Extract request data
+func (h *{{ $.Handler.Name }}) {{ .Method }}(c *gin.Context) {
     {{- if .RequestModel }}
+    // Extract request data
     var req models.{{ .RequestModel }}
     if err := c.ShouldBindJSON(&req); err != nil {
         c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -35,16 +35,17 @@ func (h *{{ $.Handler.Name }}) {{ .Function }}(c *gin.Context) {
     {{- end }}
 
     // Call service method
-    {{- if .ServiceMethod }}
+    {{- if .Method }}
     {{- if .ResponseModel }}
-    resp, err := h.Service.{{ .ServiceMethod }}(c.Request.Context(), {{ if .RequestModel }}&req{{ end }})
+    res, err := h.Service.{{ .Method }}(c.Request.Context(), {{ if .RequestModel }}&req{{ end }})
     if err != nil {
         c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
         return
     }
-    c.JSON(http.StatusOK, resp)
+
+    c.JSON(http.StatusOK, gin.H{"resp": &models.{{ .ResponseModel }}{}})
     {{- else }}
-    err := h.Service.{{ .ServiceMethod }}(c.Request.Context(), {{ if .RequestModel }}&req{{ end }})
+    err := h.Service.{{ .Method }}(c.Request.Context(), {{ if .RequestModel }}&req{{ end }})
     if err != nil {
         c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
         return

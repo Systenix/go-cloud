@@ -1,6 +1,7 @@
 package generate_command
 
 import (
+	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -81,3 +82,26 @@ type item struct {
 func (i item) Title() string       { return i.name }
 func (i item) Description() string { return "" }
 func (i item) FilterValue() string { return i.name }
+
+func (m *Model) initializeProtocolList() {
+	items := []list.Item{
+		item{name: "REST"},
+		// Add more protocols if needed
+	}
+	m.List = list.New(items, list.NewDefaultDelegate(), 0, 0)
+	m.List.Title = "Select a communication protocol:"
+	m.List.SetSize(35, 15)
+	m.List.Select(0)
+}
+
+func (m *Model) initializeMessageBrokerList() {
+	items := []list.Item{
+		item{name: "RabbitMQ"},
+		item{name: "Kafka"},
+		item{name: "NATS"},
+	}
+	m.List = list.New(items, list.NewDefaultDelegate(), 0, 0)
+	m.List.Title = "Select a message broker:"
+	m.List.SetSize(35, 15)
+	m.List.Select(0)
+}

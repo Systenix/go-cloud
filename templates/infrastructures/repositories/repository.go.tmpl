@@ -1,19 +1,62 @@
 package repositories
 
 import (
-    "{{ .ModulePath }}/internal/models"
-    "context"
+    {{- range .Imports }}
+    "{{ . }}"
+    {{- end }}
 )
 
-type {{ .Repository.Name }} interface {
+type I{{ .Repository.Name }} interface {
+    {{- range .Repository.Methods }}
+    {{ .Name }}(
+        {{- range $index, $param := .Params }}
+        {{ if $index }}, {{ end }}{{ $param.Name }} {{ $param.Type }}
+        {{- end }}
+    ) (
+        {{- range $index, $ret := .Returns }}
+        {{ if $index }}, {{ end }}{{ $ret.Name }} {{ $ret.Type }}
+        {{- end }}
+    )
+    {{- end }}
 }
 
-type {{ .Repository.Name }}Impl struct {
-    // Database connection, internal services (HTTP, gRPC, Kafka)
+type {{ .Repository.Name }} struct {
+    {{- if eq .Repository.Type "redis" }}
+    connector *redis.RedisConnector
+    {{- else if eq .Repository.Type "sql" }}
+    db *sql.DB
+    {{- end }}
 }
 
-func New{{ .Repository.Name }}() *{{ .Repository.Name }}Impl {
-    return &{{ .Repository.Name }}Impl{
-        // Initialize database connection, internal services (HTTP, gRPC, Kafka)
+func New{{ .Repository.Name }}(settings map[string]interface{}) (*{{ .Repository.Name }}, error) {
+    {{- if eq .Repository.Type "redis" }}
+    connector, err := redis.GetRedisConnector(settings)
+    if err != nil {
+        return nil, err
     }
+    return &{{ .Repository.Name }}{
+        connector: connector,
+    }, nil
+    {{- else if eq .Repository.Type "sql" }}
+    // Initialize SQL connector similarly
+    {{- else }}
+    return &{{ .Repository.Name }}{}, nil
+    {{- end }}
 }
+
+{{- range .Repository.Methods }}
+
+func (r *{{ $.Repository.Name }}) {{ .Name }}(
+    {{- range $index, $param := .Params }}
+    {{ if $index }}, {{ end }}{{ $param.Name }} {{ $param.Type }}
+    {{- end }}
+) (
+    {{- range $index, $ret := .Returns }}
+    {{ if $index }}, {{ end }}{{ $ret.Name }} {{ $ret.Type }}
+    {{- end }}
+) {
+    // TODO: Implement {{ .Name }} method using r.connector
+    return
+}
+
+{{- end }}

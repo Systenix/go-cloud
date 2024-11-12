@@ -22,16 +22,18 @@ type Model struct {
 }
 
 type Repository struct {
-	Name  string `yaml:"name"`
-	Model string `yaml:"model"`
+	Name     string                 `yaml:"name"`
+	Type     string                 `yaml:"type"`
+	Model    string                 `yaml:"model"`
+	Settings map[string]interface{} `yaml:"settings"`
+	Methods  []Method               `yaml:"methods"`
 }
 
 type Route struct {
 	Path          string   `yaml:"path"`
 	Middleware    []string `yaml:"middleware"`
+	Verb          string   `yaml:"verb"`
 	Method        string   `yaml:"method"`
-	Function      string   `yaml:"function"`
-	ServiceMethod string   `yaml:"service_method"`
 	RequestModel  string   `yaml:"request_model"`
 	ResponseModel string   `yaml:"response_model"`
 }
@@ -42,27 +44,25 @@ type Handler struct {
 	Routes  []Route `yaml:"routes"`
 }
 
-type Param struct {
+type Variable struct {
 	Name string `yaml:"name"`
 	Type string `yaml:"type"`
 }
 
-type ServiceMethod struct {
-	Name    string  `yaml:"name"`
-	Params  []Param `yaml:"params"`
-	Returns []Param `yaml:"returns"`
+type Method struct {
+	Name    string     `yaml:"name"`
+	Params  []Variable `yaml:"params"`
+	Returns []Variable `yaml:"returns"`
 }
 
 type Service struct {
-	Name         string          `yaml:"name"`
-	Type         string          `yaml:"type"`
-	Port         string          `yaml:"port"`
-	Models       []Model         `yaml:"models"`
-	ModelNames   []string        `yaml:"model_names"`
-	Repositories []Repository    `yaml:"repositories"`
-	Handlers     []Handler       `yaml:"handlers"`
-	Middleware   []string        `yaml:"middleware"`
-	Methods      []ServiceMethod `yaml:"methods"`
+	Name         string    `yaml:"name"`
+	Type         string    `yaml:"type"`
+	Models       []string  `yaml:"models"`
+	Repositories []string  `yaml:"repositories"`
+	Handlers     []Handler `yaml:"handlers"`
+	Middleware   []string  `yaml:"middleware"`
+	Methods      []Method  `yaml:"methods"`
 }
 
 type Middleware struct {
@@ -104,11 +104,13 @@ type ProjectData struct {
 	ProjectDir    string
 	Protocol      string
 	MessageBroker string
+	Port          string
 	GoVersion     string
 	Middleware    []Middleware
 	ThirdParty    ThirdParty
 	Services      []Service
 	Models        []Model
+	Repositories  []Repository
 	Events        []Event
 	Docker        Docker
 }
@@ -129,6 +131,24 @@ func GenerateProject(data ProjectData) error {
 		return err
 	}
 
+	// Generate Makefile
+	err = generateFile("Makefile.tmpl", filepath.Join(data.ProjectDir, "Makefile"), data)
+	if err != nil {
+		return err
+	}
+
+	// Generate models
+	err = generateModels(data)
+	if err != nil {
+		return err
+	}
+
+	// Generate repositories
+	err = generateRepositories(data)
+	if err != nil {
+		return err
+	}
+
 	// Generate middleware
 	err = generateMiddleware(data)
 	if err != nil {
@@ -143,12 +163,6 @@ func GenerateProject(data ProjectData) error {
 
 	// Generate handlers
 	err = generateHandlers(data)
-	if err != nil {
-		return err
-	}
-
-	// Generate models
-	err = generateModels(data)
 	if err != nil {
 		return err
 	}
@@ -194,27 +208,70 @@ func generateMain(data ProjectData) error {
 		fmt.Sprintf("%s/internal/services", data.ModulePath),
 	}
 
-	middleware := collectMiddleware(data)
-
-	fmt.Println("main Middleware:", middleware)
+	// Include repositories if used
+	if len(data.Repositories) > 0 {
+		imports = append(imports, fmt.Sprintf("%s/internal/infrastructures/repositories", data.ModulePath))
+	}
 
 	// Prepare template data
 	tmplData := struct {
-		ModulePath string
-		Services   []Service
-		Handlers   []Handler
-		Middleware []Middleware
-		Imports    []string
+		Port         string
+		ModulePath   string
+		Middleware   []Middleware
+		Repositories []Repository
+		Services     []Service
+		Handlers     []Handler
+		Imports      []string
 	}{
-		ModulePath: data.ModulePath,
-		Services:   data.Services,
-		Handlers:   collectHandlers(data.Services),
-		Middleware: middleware,
-		Imports:    imports,
+		Port:         data.Port,
+		ModulePath:   data.ModulePath,
+		Middleware:   collectMiddleware(data),
+		Repositories: collectRepositories(data.Services, data.Repositories),
+		Services:     data.Services,
+		Handlers:     collectHandlers(data.Services),
+		Imports:      imports,
 	}
 
 	outputPath := filepath.Join(data.ProjectDir, "cmd", "main.go")
 	return generateFile("cmd/main.go.tmpl", outputPath, tmplData)
+}
+
+func generateMiddleware(data ProjectData) error {
+	if len(data.Middleware) == 0 {
+		// No middleware to generate
+		return nil
+	}
+
+	// Determine necessary imports based on middleware types
+	importsSet := make(map[string]struct{})
+	for _, mw := range data.Middleware {
+		switch mw.Type {
+		case "logging":
+			importsSet["log"] = struct{}{}
+			importsSet["time"] = struct{}{}
+		case "metrics":
+			importsSet["github.com/prometheus/client_golang/prometheus"] = struct{}{}
+			importsSet["github.com/prometheus/client_golang/prometheus/promhttp"] = struct{}{}
+			// Add other types as necessary
+		}
+	}
+
+	// Convert imports set to slice
+	imports := make([]string, 0, len(importsSet))
+	for imp := range importsSet {
+		imports = append(imports, imp)
+	}
+
+	tmplData := struct {
+		Middleware []Middleware
+		Imports    []string
+	}{
+		Middleware: data.Middleware,
+		Imports:    imports,
+	}
+
+	outputPath := filepath.Join(data.ProjectDir, "internal", "interfaces", "middleware", "middleware.go")
+	return generateFile("interfaces/middleware/middleware.go.tmpl", outputPath, tmplData)
 }
 
 func collectMiddleware(data ProjectData) []Middleware {
@@ -259,14 +316,6 @@ func appendIfMissing(middlewareList []Middleware, mw Middleware) []Middleware {
 	return append(middlewareList, mw)
 }
 
-func collectRepositories(services []Service) []Repository {
-	var repositories []Repository
-	for _, service := range services {
-		repositories = append(repositories, service.Repositories...)
-	}
-	return repositories
-}
-
 // Collect handlers from all services
 func collectHandlers(services []Service) []Handler {
 	var handlers []Handler
@@ -276,42 +325,117 @@ func collectHandlers(services []Service) []Handler {
 	return handlers
 }
 
-func generateMiddleware(data ProjectData) error {
-	if len(data.Middleware) == 0 {
-		// No middleware to generate
-		return nil
-	}
+func generateRepositories(data ProjectData) error {
+	for _, repository := range data.Repositories {
+		imports := getRepositoryImports(repository, data.ModulePath)
 
-	// Determine necessary imports based on middleware types
-	importsSet := make(map[string]struct{})
-	for _, mw := range data.Middleware {
-		switch mw.Type {
-		case "logging":
-			importsSet["log"] = struct{}{}
-			importsSet["time"] = struct{}{}
-		case "metrics":
-			importsSet["github.com/prometheus/client_golang/prometheus"] = struct{}{}
-			importsSet["github.com/prometheus/client_golang/prometheus/promhttp"] = struct{}{}
-			// Add other types as necessary
+		tmplData := struct {
+			ModulePath string
+			Repository Repository
+			Imports    []string
+		}{
+			ModulePath: data.ModulePath,
+			Repository: repository,
+			Imports:    imports,
+		}
+
+		outputPath := filepath.Join(data.ProjectDir, "internal", "infrastructures", "repositories", strings.ToLower(repository.Name)+".go")
+		err := generateFile("infrastructures/repositories/repository.go.tmpl", outputPath, tmplData)
+		if err != nil {
+			return err
+		}
+
+		// Generate connector code if necessary
+		err = generateConnector(repository, data)
+		if err != nil {
+			return err
 		}
 	}
+	return nil
+}
 
-	// Convert imports set to slice
-	imports := make([]string, 0, len(importsSet))
-	for imp := range importsSet {
-		imports = append(imports, imp)
+func getRepositoryImports(repo Repository, modulePath string) []string {
+	imports := []string{
+		"context",
+		fmt.Sprintf("%s/internal/models", modulePath),
 	}
 
-	tmplData := struct {
-		Middleware []Middleware
-		Imports    []string
-	}{
-		Middleware: data.Middleware,
-		Imports:    imports,
+	switch repo.Type {
+	case "redis":
+		imports = append(imports, fmt.Sprintf("%s/internal/infrastructures/redis", modulePath))
+	case "sql":
+		imports = append(imports, "database/sql")
+		// Add other repository types as needed
+	}
+	return imports
+}
+
+func collectRepositories(services []Service, allRepositories []Repository) []Repository {
+	repoMap := make(map[string]Repository)
+	for _, repo := range allRepositories {
+		repoMap[repo.Name] = repo
 	}
 
-	outputPath := filepath.Join(data.ProjectDir, "internal", "interfaces", "middleware", "middleware.go")
-	return generateFile("interfaces/middleware/middleware.go.tmpl", outputPath, tmplData)
+	var repositories []Repository
+	repoSet := make(map[string]struct{})
+	for _, service := range services {
+		for _, repoName := range service.Repositories {
+			if _, exists := repoSet[repoName]; !exists {
+				if repo, found := repoMap[repoName]; found {
+					repositories = append(repositories, repo)
+					repoSet[repoName] = struct{}{}
+				} else {
+					fmt.Printf("Warning: Repository '%s' referenced in service '%s' not found in project repositories.\n", repoName, service.Name)
+				}
+			}
+		}
+	}
+	return repositories
+}
+
+func collectRepositoriesByName(allRepos []Repository, repoNames []string) []Repository {
+	repoMap := make(map[string]Repository)
+	for _, repo := range allRepos {
+		repoMap[repo.Name] = repo
+	}
+
+	var repos []Repository
+	for _, repoName := range repoNames {
+		if repo, exists := repoMap[repoName]; exists {
+			repos = append(repos, repo)
+		} else {
+			fmt.Printf("Warning: Repository '%s' not found in project repositories.\n", repoName)
+		}
+	}
+	return repos
+}
+
+func generateConnector(repository Repository, data ProjectData) error {
+	switch repository.Type {
+	case "redis":
+		connectorDir := filepath.Join(data.ProjectDir, "internal", "infrastructures", "redis")
+		connectorFile := filepath.Join(connectorDir, "redis.go")
+		if _, err := os.Stat(connectorFile); os.IsNotExist(err) {
+			// Create the directory if it doesn't exist
+			if err := os.MkdirAll(connectorDir, os.ModePerm); err != nil {
+				return err
+			}
+
+			tmplData := struct {
+				ModulePath string
+			}{
+				ModulePath: data.ModulePath,
+			}
+
+			err = generateFile("infrastructures/redis/redis.go.tmpl", connectorFile, tmplData)
+			if err != nil {
+				return err
+			}
+		}
+		// No need to generate again if it exists
+		// Handle other connector types similarly
+	}
+	return nil
 }
 
 // Generate services for a project
@@ -319,96 +443,20 @@ func generateServices(data ProjectData) error {
 	for i := range data.Services {
 		service := &data.Services[i]
 
-		// Generate models for the service
-		err := generateServiceModels(data, service)
-		if err != nil {
-			return err
-		}
-
-		// Generate repositories for the service
-		err = generateServiceRepositories(data, service)
-		if err != nil {
-			return err
-		}
-
-		// Determine required imports
-		imports := getServiceImports(service)
-
-		// Always include mandatory imports
-		mandatoryImports := []string{
-			fmt.Sprintf("%s/internal/repositories", data.ModulePath),
-			fmt.Sprintf("%s/internal/models", data.ModulePath),
-		}
-
-		// Combine mandatory and optional imports
-		allImports := append(mandatoryImports, imports...)
-
 		// Generate service code
-		outputPath := filepath.Join(data.ProjectDir, "internal", "services", service.Name+".go")
+		outputPath := filepath.Join(data.ProjectDir, "internal", "services", strings.ToLower(service.Name)+".go")
 		tmplData := struct {
-			ModulePath string
-			Service    Service
-			Imports    []string
+			ModulePath   string
+			Repositories []Repository
+			Service      Service
+			Imports      []string
 		}{
-			ModulePath: data.ModulePath,
-			Service:    *service,
-			Imports:    allImports,
+			ModulePath:   data.ModulePath,
+			Repositories: collectRepositoriesByName(data.Repositories, service.Repositories),
+			Service:      *service,
+			Imports:      getServiceImports(service, data.ModulePath),
 		}
-		err = generateFile("services/service.go.tmpl", outputPath, tmplData)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-// Generate models for a service, leveraging  shared or predefined models
-func generateServiceModels(data ProjectData, service *Service) error {
-	modelMap := make(map[string]Model)
-	for _, model := range data.Models {
-		modelMap[model.Name] = model
-	}
-
-	for _, modelName := range service.ModelNames {
-		model, exists := modelMap[modelName]
-		if !exists {
-			return fmt.Errorf("model '%s' not found in project models", modelName)
-		}
-
-		imports := getModelImports(model)
-
-		tmplData := struct {
-			ModulePath string
-			Model      Model
-			Imports    []string
-		}{
-			ModulePath: data.ModulePath,
-			Model:      model,
-			Imports:    imports,
-		}
-
-		outputPath := filepath.Join(data.ProjectDir, "internal", "models", model.Name+".go")
-		err := generateFile("models/model.go.tmpl", outputPath, tmplData)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-// Generate repositories for a service
-func generateServiceRepositories(data ProjectData, service *Service) error {
-	for _, repo := range service.Repositories {
-		tmplData := struct {
-			ModulePath string
-			Repository Repository
-		}{
-			ModulePath: data.ModulePath,
-			Repository: repo,
-		}
-
-		outputPath := filepath.Join(data.ProjectDir, "internal", "infrastructures", "repositories", repo.Name+".go")
-		err := generateFile("infrastructures/repositories/repository.go.tmpl", outputPath, tmplData)
+		err := generateFile("services/service.go.tmpl", outputPath, tmplData)
 		if err != nil {
 			return err
 		}
@@ -417,9 +465,17 @@ func generateServiceRepositories(data ProjectData, service *Service) error {
 }
 
 // Determine imports needed by a service
-func getServiceImports(service *Service) []string {
+func getServiceImports(service *Service, modulePath string) []string {
 	importsSet := make(map[string]struct{})
 
+	// Always include context and models
+	importsSet["context"] = struct{}{}
+	importsSet[fmt.Sprintf("%s/internal/models", modulePath)] = struct{}{}
+
+	// Include repositories if used
+	if len(service.Repositories) > 0 {
+		importsSet[fmt.Sprintf("%s/internal/infrastructures/repositories", modulePath)] = struct{}{}
+	}
 	for _, method := range service.Methods {
 		for _, param := range method.Params {
 			switch param.Type {
@@ -452,7 +508,7 @@ func generateHandlers(data ProjectData) error {
 			// Determine imports needed by the handler
 			imports := getHandlerImports(handler, data.ModulePath)
 
-			outputPath := filepath.Join(data.ProjectDir, "internal", "interfaces", "handlers", handler.Name+".go")
+			outputPath := filepath.Join(data.ProjectDir, "internal", "interfaces", "handlers", strings.ToLower(handler.Name)+".go")
 			tmplData := struct {
 				ModulePath string
 				Handler    Handler
@@ -534,7 +590,7 @@ func generateModels(data ProjectData) error {
 			Imports:    imports,
 		}
 
-		outputPath := filepath.Join(data.ProjectDir, "internal", "models", model.Name+".go")
+		outputPath := filepath.Join(data.ProjectDir, "internal", "models", strings.ToLower(model.Name)+".go")
 		err := generateFile("models/model.go.tmpl", outputPath, tmplData)
 		if err != nil {
 			return err
@@ -575,7 +631,8 @@ func generateFile(templatePath, outputPath string, data interface{}) error {
 
 	// Create a new template and add the custom functions
 	tmpl, err := template.New(filepath.Base(templatePath)).Funcs(template.FuncMap{
-		"lowerFirst": lowerFirst,
+		"lowerFirst":  lowerFirst,
+		"toCamelCase": toCamelCase,
 	}).Parse(string(tmplContent))
 	if err != nil {
 		return fmt.Errorf("failed to parse template %s: %w", templatePath, err)
@@ -596,12 +653,4 @@ func generateFile(templatePath, outputPath string, data interface{}) error {
 
 	// Execute the template
 	return tmpl.Execute(outFile, data)
-}
-
-// lowerFirst converts the first character of a string to lowercase.
-func lowerFirst(str string) string {
-	if len(str) == 0 {
-		return ""
-	}
-	return strings.ToLower(str[:1]) + str[1:]
 }

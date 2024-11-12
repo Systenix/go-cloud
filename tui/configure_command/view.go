@@ -44,9 +44,9 @@ func (m *ConfigureModel) renderBlueprint() string {
 
 	for _, svc := range m.Data.Services {
 		sb.WriteString(fmt.Sprintf("  • %s (%s)\n", svc.Name, svc.Type))
-		if len(svc.ModelNames) > 0 {
+		if len(svc.Models) > 0 {
 			sb.WriteString("    Models:\n")
-			for _, modelName := range svc.ModelNames {
+			for _, modelName := range svc.Models {
 				sb.WriteString(fmt.Sprintf("      - %s\n", modelName))
 			}
 		}

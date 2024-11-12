@@ -68,7 +68,7 @@ type Model struct {
 	EditingHandler *generators.Handler
 
 	// EditingMethod is a pointer to the service method currently being edited.
-	EditingMethod *generators.ServiceMethod
+	EditingMethod *generators.Method
 
 	// Add other fields as needed
 }

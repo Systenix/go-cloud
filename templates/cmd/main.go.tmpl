@@ -11,16 +11,34 @@ func main() {
     router := gin.New()
 
     {{- range .Middleware }}
-    // Apply global middleware
     {{- if eq .Scope "global" }}
+    // Apply {{ .Name }} middleware globally
     router.Use(middleware.{{ .Name }}())
     {{- end }}
     {{- end }}
 
-    // Initialize services and handlers
-    {{- range .Services }}
-    {{ lowerFirst .Name }} := services.New{{ .Name }}()
+    // Initialize repositories
+    {{- range .Repositories }}
+    {{ lowerFirst .Name }}, err := repositories.New{{ .Name }}(map[string]interface{}{
+        {{- range $key, $value := .Settings }}
+        "{{ $key }}": {{ printf "%#v" $value }},
+        {{- end }}
+    })
+    if err != nil {
+        log.Fatal(err)
+    }
     {{- end }}
+
+    // Initialize services
+    {{- range .Services }}
+    {{ lowerFirst .Name }} := services.New{{ .Name }}(
+        {{- range $index, $repo := .Repositories }}
+        {{ if $index }}, {{ end }}{{ lowerFirst $repo }},
+        {{- end }}
+    )
+    {{- end }}
+
+    // Initialize handlers
     {{- range .Handlers }}
     {{ lowerFirst .Name }} := handlers.New{{ .Name }}({{ lowerFirst .Service }})
     {{- end }}
@@ -29,19 +47,19 @@ func main() {
     {{- range .Handlers }}
     {{- $handler := . }}
     {{- range $route := .Routes }}
-    // Route: {{ $route.Method }} {{ $route.Path }}
-    router.{{ $route.Method }}("{{ $route.Path }}",
+    // Route: {{ $route.Verb }} {{ $route.Path }}
+    router.{{ $route.Verb }}("{{ $route.Path }}",
         {{- range $index, $mw := $route.Middleware }}
         middleware.{{ $mw }}(),
         {{- end }}
-        {{ lowerFirst $handler.Name }}.{{ $route.Function }},
+        {{ lowerFirst $handler.Name }}.{{ $route.Method }},
     )
     {{- end }}
     {{- end }}
 
     // Start the server
-    log.Println("Starting server on :8080")
-    if err := router.Run(":8080"); err != nil {
+    log.Println("Starting server on :{{ .Port }}")
+    if err := router.Run(":{{ .Port }}"); err != nil {
         log.Fatal(err)
     }
 }

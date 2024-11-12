@@ -55,12 +55,14 @@ var generateCmd = &cobra.Command{
 			}
 			// Map configData to ProjectData
 			data.GoVersion = configData.GoVersion
+			data.Port = configData.Port
 			data.Middleware = configData.Middleware
-			data.Docker = configData.Docker
 			data.Services = configData.Services
 			data.Models = configData.Models
+			data.Repositories = configData.Repositories
 			data.Events = configData.Events
-
+			data.Docker = configData.Docker
+			data.ThirdParty = configData.ThirdParty
 		} else {
 			fmt.Println("No configuration file provided. Please provide a valid blueprint config file.")
 			os.Exit(1)
